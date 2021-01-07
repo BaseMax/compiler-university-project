@@ -176,15 +176,15 @@ out_stmt: PUT out_list COMMANDEND
 out_list: ID SEMICOLON out_list | ID
 	;
 
-loop_stmt: REPEAT SECTION_OPEN stmt_list SECTION_CLOSE condition
+loop_stmt: REPEAT SECTION_OPEN stmt_list SECTION_CLOSE condition COMMANDEND
 	;
 
-condition: EITHER logical_exp OR logical_exp COMMANDEND
-	| NEITHER logical_exp NOR logical_exp COMMANDEND
-	| BOTH logical_exp AND logical_exp COMMANDEND
+condition: EITHER logical_exp OR logical_exp
+	| NEITHER logical_exp NOR logical_exp
+	| BOTH logical_exp AND logical_exp
 	;
 
-cond1_stmt: EXECUTE SECTION_OPEN stmt_list SECTION_CLOSE condition
+cond1_stmt: EXECUTE SECTION_OPEN stmt_list SECTION_CLOSE condition COMMANDEND
 	;
 
 logical_exp: logical_exp OR elem1
