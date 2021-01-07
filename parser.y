@@ -13,6 +13,8 @@
 	typedef struct symbol {
 		char symbol[SYMBOL_SIZE];
 	}SYMBOL;
+
+	extern int line;
 %}
 
 %union
@@ -79,8 +81,8 @@
 %type <string> stmt
 
 %type <string> assgn_stmt
-%type <string> index
-%type <string> no
+//%type <string> index
+//%type <string> no
 
 %type <string> in_stmt
 %type <string> out_stmt
@@ -89,7 +91,6 @@
 %type <string> out_list
 
 %type <string> loop_stmt
-%type <string> condition_list
 %type <string> cond1_stmt
 %type <string> logical_exp
 %type <string> elem1
@@ -112,7 +113,7 @@
 
 program: heading data_part exe_part
 	;
-heading: PROGRAM ID {
+heading: PROGRAM ID COLON {
 		printf("// Program %s\n", $2);
 	}
 	;
@@ -126,14 +127,16 @@ data_body: data_stmt { $$ = $1; }
 	| data_stmt data_body { sprintf($$, "%s%s", $1, $2); }
 	;
 
-data_stmt: id_list COLON type
+data_stmt: id_list COLON type COMMANDEND
 	;
 
 id_list: ID { $$ = $1; }
-	| ID id_list { sprintf($$, "%s%s", $1, $2); }
+	| ID SEMICOLON id_list { sprintf($$, "%s%s", $1, $2); }
 	;
 
-type: INTEGER | FLOAT | CHAR
+type: INTEGER
+	| FLOAT
+	| CHAR
 	;
 
 exe_part: PROCEDURE DIVISION COMMANDEND stmt_list END COMMANDEND
@@ -150,23 +153,24 @@ stmt: assgn_stmt { $$ = $1; }
 	| cond1_stmt
 	;
 
-assgn_stmt: SET ID TO math_exp
-	| SET ID TO STRING
+assgn_stmt: SET ID TO math_exp COMMANDEND
+	| SET ID TO STRING COMMANDEND
 	;
 
-index: ID | NUMBER | ID SEMICOLON index | NUMBER SEMICOLON index
-	;
+//index: ID | NUMBER | ID SEMICOLON index | NUMBER SEMICOLON index
+//	;
 
-no: UNSIGNED | INTEGER
-	;
+//no: UNSIGNED
+//	| INTEGER
+//	;
 
-in_stmt: GET in_list
+in_stmt: GET in_list COMMANDEND
 	;
 
 in_list: ID SEMICOLON in_list | ID
 	;
 
-out_stmt: PUT out_list
+out_stmt: PUT out_list COMMANDEND
 	;
 
 out_list: ID SEMICOLON out_list | ID
@@ -175,9 +179,9 @@ out_list: ID SEMICOLON out_list | ID
 loop_stmt: REPEAT SECTION_OPEN stmt_list SECTION_CLOSE condition
 	;
 
-condition: EITHER logical_exp OR logical_exp
-	| NEITHER logical_exp NOR logical_exp
-	| BOTH logical_exp AND logical_exp
+condition: EITHER logical_exp OR logical_exp COMMANDEND
+	| NEITHER logical_exp NOR logical_exp COMMANDEND
+	| BOTH logical_exp AND logical_exp COMMANDEND
 	;
 
 cond1_stmt: EXECUTE SECTION_OPEN stmt_list SECTION_CLOSE condition
@@ -238,7 +242,7 @@ int yywrap()
 
 void yyerror(char const* msg)
 {
-	fprintf(stderr, "%s\n", msg);
+	fprintf(stderr, "[%d]:%s\n", line, msg);
 }
 
 int main(int argc, char *argv[])
