@@ -15,7 +15,6 @@
 	}SYMBOL;
 %}
 
-
 %union
 {
 	char *string;
@@ -42,6 +41,7 @@
 %token <string> EQ
 %token <string> NOT
 %token <string> AND
+%token <string> OR
 %token <string> NOR
 %token <string> ADD
 %token <string> MIN
@@ -54,6 +54,7 @@
 %token <string> INTEGER
 %token <string> FLOAT
 %token <string> CHAR
+%token <string> END
 %token <string> SEMICOLON
 %token <string> COLON
 %token <string> COMMANDEND
@@ -108,13 +109,8 @@
 
 %start program
 %%
-program: heading data_part exe_part {
-		int i = 0;
-		for (i=0; i<global_index; i++) {
-			printf("double %s;\n", symbol_table[i].symbol);
-		}
-		printf("%s", $1);
-	}
+
+program: heading data_part exe_part
 	;
 heading: PROGRAM ID {
 		printf("// Program %s\n", $2);
@@ -155,7 +151,7 @@ stmt: assgn_stmt { $$ = $1; }
 	;
 
 assgn_stmt: SET ID TO math_exp
-	| SET ID TO ...
+	| SET ID TO STRING
 	;
 
 index: ID | NUMBER | ID SEMICOLON index | NUMBER SEMICOLON index
@@ -176,7 +172,7 @@ out_stmt: PUT out_list
 out_list: ID SEMICOLON out_list | ID
 	;
 
-loop_stmt: REPEAT SECTION_OPEN stmt_list SECTION_CLOSE condition | ID times
+loop_stmt: REPEAT SECTION_OPEN stmt_list SECTION_CLOSE condition
 	;
 
 condition: EITHER logical_exp OR logical_exp
@@ -201,6 +197,10 @@ elem2: NOT elem2
 
 elem3: LEFTPAREN logical_exp RIGHTPAREN
 	| rel_exp
+	;
+
+
+rel_exp: t1 rel_op t1
 	;
 
 t1: math_exp
