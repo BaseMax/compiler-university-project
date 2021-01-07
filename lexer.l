@@ -8,6 +8,8 @@ extern int yyparse();
 int line=1;
 %}
 
+%x COMMAND
+
 %%
 "program"				{ return(PROGRAM); }
 
@@ -35,9 +37,16 @@ int line=1;
 "EQ"				{ return(EQ); }
 
 "not"				{ return(NOT); }
-"and"				{ return(AND); }
 "nor"				{ return(NOR); }
+"and"				{ return(AND); }
+"or"				{ return(OR); }
 
+<INITIAL>"/*"   {BEGIN(COMMAND);}
+<COMMAND>[\n] 	{
+	line++;
+}
+<COMMAND>.   ;
+<COMMENT>"*/"   {BEGIN(INITIAL);}
 
 "+"				{ return(ADD); }
 "-"				{ return(MIN); }
