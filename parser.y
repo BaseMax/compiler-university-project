@@ -7,6 +7,8 @@
 	extern int yylex();
 	extern void yyerror(char const* msg);
 	extern int line;
+	#define BUFER_SIZE 1024
+	char buffer[BUFER_SIZE];
 %}
 
 %union
@@ -102,9 +104,11 @@
 %start program
 %%
 
-program: heading data_part exe_part {
-		//$$ = sprintf($$, "%s%s%s", $1, $2, $3);
-		//printf("%s", $$);
+program: structure {
+	}
+	;
+
+structure: heading data_part exe_part {
 		printf("%s", $1);
 		printf("%s", $2);
 		printf("%s", $3);
@@ -112,7 +116,6 @@ program: heading data_part exe_part {
 	;
 
 heading: PROGRAM ID COLON {
-		// Why not works: sprintf($$, "// Program %s\n", $2);
 		printf("// Program %s\n", $2);
 	}
 	;
@@ -160,7 +163,8 @@ assgn_stmt: SET ID TO math_exp COMMANDEND {
 		sprintf($$, "%s = %s;\n", $2, $4);
 	}
 	| SET ID TO STRING COMMANDEND {
-		sprintf($$, "%s = \"%s\";\n", $2, $4);
+		strcpy(buffer, $4);
+		sprintf($$, "%s = \"%s\";\n", $2, buffer);
 	}
 	;
 
@@ -293,7 +297,9 @@ factor: SUB factor {
 	}
 	;
 
-element: LEFTPAREN math_exp RIGHTPAREN
+element: LEFTPAREN math_exp RIGHTPAREN {
+		sprintf($$, "(%s)", $2);
+	}
 	| ID {
 		$$ = $1;
 	}
@@ -301,7 +307,8 @@ element: LEFTPAREN math_exp RIGHTPAREN
 		$$ = $1;
 	}
 	| STRING {
-		$$ = $1;
+		strcpy(buffer, $1);
+		$$ = buffer;
 	}
 	;
 
