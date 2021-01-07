@@ -35,6 +35,8 @@ extern int yyparse();
 
 "not"				{ return(NOT); }
 "and"				{ return(AND); }
+"nor"				{ return(NOR); }
+
 
 "+"				{ return(ADD); }
 "-"				{ return(MIN); }
@@ -50,6 +52,10 @@ extern int yyparse();
 "float"				{ return(FLOAT); }
 "char"				{ return(CHAR); }
 
+"unsigned"				{ return(UNSIGNED); }
+"end"				{ return(END); }
+
+
 ","				{ return(SEMICOLON); }
 ":"				{ return(COLON); }
 ";"					{ return(COMMANDEND); }
@@ -59,3 +65,4 @@ extern int yyparse();
 \"(\\.|[^\\"\n])*\"										{ yylval.string = strdup(yytext); return(STRING); }
 [ \t\n]				;
 %%
+
