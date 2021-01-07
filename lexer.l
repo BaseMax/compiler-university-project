@@ -62,7 +62,7 @@ extern int yyparse();
 
 [a-zA-Z][a-zA-Z0-9]*									{ yylval.string = strdup(yytext); return(ID); }
 [1-9][0-9]*|\.[0-9]*|[1-9][0-9]\.|[1-9][0-9]*\.[0-9]*	{ yylval.string = strdup(yytext); return(NUMBER); }
-\"(\\.|[^\\"\n])*\"										{ yylval.string = strdup(yytext); return(STRING); }
+\'(\\.|[^\\'\n])*\'										{ yylval.string = strdup(yytext); return(STRING); }
 [ \t\n]				;
 %%
 
