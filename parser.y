@@ -111,7 +111,11 @@
 %start program
 %%
 
-program: heading data_part exe_part
+program: heading data_part exe_part {
+		printf("%s", $1);
+		printf("%s", $2);
+		printf("%s", $3);
+	}
 	;
 heading: PROGRAM ID COLON {
 		printf("// Program %s\n", $2);
@@ -119,7 +123,7 @@ heading: PROGRAM ID COLON {
 	;
 
 data_part: DATA DIVISION COMMANDEND data_body END COMMANDEND {
-
+		$$ = $4;
 	}
 	;
 
@@ -127,11 +131,13 @@ data_body: data_stmt { $$ = $1; }
 	| data_stmt data_body { sprintf($$, "%s%s", $1, $2); }
 	;
 
-data_stmt: id_list COLON type COMMANDEND
+data_stmt: id_list COLON type COMMANDEND {
+		sprintf($$, "%s %s;\n", $3, $1);
+	}
 	;
 
 id_list: ID { $$ = $1; }
-	| ID SEMICOLON id_list { sprintf($$, "%s%s", $1, $2); }
+	| ID SEMICOLON id_list { sprintf($$, "%s,%s", $1, $2); }
 	;
 
 type: INTEGER
@@ -139,7 +145,9 @@ type: INTEGER
 	| CHAR
 	;
 
-exe_part: PROCEDURE DIVISION COMMANDEND stmt_list END COMMANDEND
+exe_part: PROCEDURE DIVISION COMMANDEND stmt_list END COMMANDEND {
+		$$ = $4;
+	}
 	;
 
 stmt_list: stmt { $$ = $1; }
@@ -147,14 +155,18 @@ stmt_list: stmt { $$ = $1; }
 	;
 
 stmt: assgn_stmt { $$ = $1; }
-	| in_stmt
-	| out_stmt
-	| loop_stmt
-	| cond1_stmt
+	| in_stmt { $$ = $1; }
+	| out_stmt { $$ = $1; }
+	| loop_stmt { $$ = $1; }
+	| cond1_stmt { $$ = $1; }
 	;
 
-assgn_stmt: SET ID TO math_exp COMMANDEND
-	| SET ID TO STRING COMMANDEND
+assgn_stmt: SET ID TO math_exp COMMANDEND {
+		sprintf($$, "%s = %s;\n", $2, $3);
+	}
+	| SET ID TO STRING COMMANDEND {
+		sprintf($$, "%s = \"%s\";\n", $2, $3);
+	}
 	;
 
 //index: ID | NUMBER | ID SEMICOLON index | NUMBER SEMICOLON index
