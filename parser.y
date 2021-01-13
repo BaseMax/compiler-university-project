@@ -256,10 +256,9 @@ in_list: ID {
 		$$ = sdsnew($1);
 	}
 	| ID SEMICOLON in_list {
-		// sprintf($$, "%s%s", $1, $2);
 		$$ = sdsnew($1);
 		$$ = sdscat($$, " >> ");
-		$$ = sdscat($$, $2);
+		$$ = sdscat($$, $3);
 	}
 	;
 
@@ -290,9 +289,10 @@ loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition {
 	;
 
 cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE COMMANDEND {
-		$$ = sdsnew("// execute\n");
-		// $$ = sdscat($$, $5);
-		// $$ = sdscat($$, " ) {\n");
+		$$ = sdsnew("// execute ");
+		 $$ = sdscat($$, $5);
+		 //$$ = sdscat($$, " ) {\n");
+		 $$ = sdscat($$, "\n");
 		$$ = sdscat($$, "{\n");
 		$$ = sdscat($$, $3);
 		$$ = sdscat($$, "}\n");
