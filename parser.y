@@ -183,7 +183,7 @@ id_list: ID {
 	| ID SEMICOLON id_list {
 		$$ = sdsnew($1);
 		$$ = sdscat($$, ",");
-		$$ = sdscat($$, $2);
+		$$ = sdscat($$, $3);
 	}
 	;
 
