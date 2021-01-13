@@ -120,15 +120,22 @@
 %%
 
 program: structure {
-		printf("%s", $1);
+		// INIT
+		// printf("%s", $1);
 	}
 	;
 
 structure: heading data_part exe_part {
+		// $$ = sdsnew("#include <iostream>\n\nusing namespace std;\n\n");
+		// sdscat($$, $2);
+		// sdscat($$, $3);
+
 		printf("%s", $1);
+		printf("#include <iostream>\n\nusing namespace std;\n\n");
 		printf("%s", $2);
+		printf("int main()\n{\n");
 		printf("%s", $3);
-		$$ = sdsnew($1);
+		printf("return 0;\n}\n");
 	}
 	| {
 		$$ = sdsnew("// empty program\n");
@@ -140,10 +147,16 @@ heading: PROGRAM ID COLON {
 		$$ = sdscat($$, $2);
 		$$ = sdscat($$, "\n");
 	}
+	| {
+		$$ = sdsempty();
+	}
 	;
 
 data_part: DATA DIVISION COMMANDEND data_body END COMMANDEND {
 		$$ = sdsnew($4);
+	}
+	| {
+		$$ = sdsempty();
 	}
 	;
 
@@ -186,9 +199,10 @@ type: INTEGER {
 	;
 
 exe_part: PROCEDURE DIVISION COMMANDEND stmt_list_or_no END COMMANDEND {
-		$$ = sdsnew("#include <stdio.h>\n\nint main()\n{\n");
-		$$ = sdscat($$, $4);
-		$$ = sdscat($$, "return 0;\n}\n");
+		// $$ = sdsnew("int main()\n{\n");
+		// $$ = sdscat($$, $4);
+		// $$ = sdscat($$, "return 0;\n}\n");
+		$$ = sdsnew($4);
 	}
 	;
 
@@ -232,25 +246,36 @@ assgn_stmt: SET ID TO expression COMMANDEND {
 //	;
 
 in_stmt: GET in_list COMMANDEND {
-		$$ = sdsnew("get ");
+		$$ = sdsnew("cin >> ");
 		$$ = sdscat($$, $2);
 		$$ = sdscat($$, ";\n");
 	}
 	;
 
 in_list: ID {
-		$$ = $1;
+		$$ = sdsnew($1);
 	}
 	| ID SEMICOLON in_list {
 		// sprintf($$, "%s%s", $1, $2);
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " >> ");
+		$$ = sdscat($$, $2);
 	}
 	;
 
 out_stmt: PUT out_list COMMANDEND {
+		$$ = sdsnew("cout << ");
+		$$ = sdscat($$, $2);
 	}
 	;
 
-out_list: ID SEMICOLON out_list | ID {
+out_list: ID SEMICOLON out_list {
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " << ");
+		$$ = sdscat($$, $2);
+	}
+	| ID {
+		$$ = sdsnew($1);
 	}
 	;
 
@@ -263,10 +288,11 @@ loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition {
 	}
 	;
 
-cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition {
-		$$ = sdsnew("execute( ");
-		$$ = sdscat($$, $5);
-		$$ = sdscat($$, " ) {\n");
+cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE COMMANDEND {
+		$$ = sdsnew("// execute\n");
+		// $$ = sdscat($$, $5);
+		// $$ = sdscat($$, " ) {\n");
+		$$ = sdscat($$, "{\n");
 		$$ = sdscat($$, $3);
 		$$ = sdscat($$, "}\n");
 	}
@@ -275,20 +301,20 @@ cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition {
 condition: EITHER expression COMMANDEND {
 		$$ = sdsnew($1);
 		$$ = sdscat($$, $2);
-		//$$ = sdscat($$, " OR ");
-		//$$ = sdscat($$, $3);
+		// $$ = sdscat($$, " OR ");
+		// $$ = sdscat($$, $3);
 	}
 	| NEITHER expression COMMANDEND {
 		$$ = sdsnew($1);
 		$$ = sdscat($$, $2);
-		//$$ = sdscat($$, " NOR ");
-		//$$ = sdscat($$, $3);
+		// $$ = sdscat($$, " NOR ");
+		// $$ = sdscat($$, $3);
 	}
 	| BOTH expression COMMANDEND {
 		$$ = sdsnew($1);
 		$$ = sdscat($$, $2);
-		//$$ = sdscat($$, " AND ");
-		//$$ = sdscat($$, $3);
+		// $$ = sdscat($$, " AND ");
+		// $$ = sdscat($$, $3);
 	}
 	;
 
