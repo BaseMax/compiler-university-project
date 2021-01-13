@@ -2,7 +2,7 @@
 	#include <stdio.h>
 	#include <string.h>
 	#include <stdlib.h>
-	#include "buffer.h"
+	#include "sds.h"
 
 	#define YYERROR_VERBOSE 1
 
@@ -26,7 +26,8 @@
 
 %union
 {
-	buffer_t *string;
+	sds string;
+	//buffer_t *string;
 	//char *string;
 }
 
@@ -125,89 +126,89 @@
 %%
 
 program: structure {
-		printf("%s", $1);
+		//printf("%s", $1);
 	}
 	;
 
 structure: heading data_part exe_part {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, buffer_string($2));
-		buffer_append($$, buffer_string($3));
+		printf("%s", $1);
+		printf("%s", $2);
+		printf("%s", $3);
 	}
 	| {
-		$$ = buffer_new_with_string("// empty program\n");
+		$$ = sdsnew("// empty program\n");
 	}
 	;
 
 heading: PROGRAM ID COLON {
-		$$ = buffer_new_with_string("// Program ");
-		buffer_append($$, buffer_string($2));
-		buffer_append($$, "\n");
+		$$ = sdsnew("// Program ");
+		$$ = sdscat($$, $2);
+		$$ = sdscat($$, "\n");
 	}
 	;
 
 data_part: DATA DIVISION COMMANDEND data_body END COMMANDEND {
-		$$ = buffer_new_with_string(buffer_string($4));
+		$$ = sdsnew($4);
 	}
 	;
 
 data_body: data_stmt {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	| data_stmt data_body {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, buffer_string($2));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, $2);
 	}
 	;
 
 data_stmt: id_list COLON type COMMANDEND {
-		$$ = buffer_new_with_string(buffer_string($3));
-		buffer_append($$, " ");
-		buffer_append($$, buffer_string($1));
-		buffer_append($$, ";\n");
+		$$ = sdsnew($3);
+		$$ = sdscat($$, " ");
+		$$ = sdscat($$, $1);
+		$$ = sdscat($$, ";\n");
 	}
 	;
 
 id_list: ID {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	| ID SEMICOLON id_list {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, ",");
-		buffer_append($$, buffer_string($2));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, ",");
+		$$ = sdscat($$, $2);
 	}
 	;
 
 type: INTEGER {
-		$$ = buffer_new_with_string("int");
+		$$ = sdsnew("int");
 	}
 	| FLOAT {
-		$$ = buffer_new_with_string("float");
+		$$ = sdsnew("float");
 	}
 	| CHAR {
-		$$ = buffer_new_with_string("char");
+		$$ = sdsnew("char");
 	}
 	;
 
 exe_part: PROCEDURE DIVISION COMMANDEND stmt_list_or_no END COMMANDEND {
-		$$ = buffer_new_with_string("#include <stdio.h>\n\nint main()\n{\n");
-		buffer_append($$, buffer_string($4));
-		buffer_append($$, "return 0;\n}\n");
+		$$ = sdsnew("#include <stdio.h>\n\nint main()\n{\n");
+		$$ = sdscat($$, $4);
+		$$ = sdscat($$, "return 0;\n}\n");
 	}
 	;
 
 stmt_list_or_no: stmt_list {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	| {
-		$$ = buffer_new_with_string("// empty stmts\n");
+		$$ = sdsnew("// empty stmts\n");
 	}
 	;
 
 stmt_list: stmt { $$ = $1; }
 	| stmt stmt_list {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, buffer_string($2));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, $2);
 	}
 	;
 
@@ -219,10 +220,10 @@ stmt: assgn_stmt { $$ = $1; }
 	;
 
 assgn_stmt: SET ID TO math_exp COMMANDEND {
-		$$ = buffer_new_with_string(buffer_string($2));
-		buffer_append($$, " = ");
-		buffer_append($$, buffer_string($4));
-		buffer_append($$, ";\n");
+		$$ = sdsnew($2);
+		$$ = sdscat($$, " = ");
+		$$ = sdscat($$, $4);
+		$$ = sdscat($$, ";\n");
 	}
 	;
 
@@ -234,6 +235,9 @@ assgn_stmt: SET ID TO math_exp COMMANDEND {
 //	;
 
 in_stmt: GET in_list COMMANDEND {
+		$$ = sdsnew("get ");
+		$$ = sdscat($$, $2);
+		$$ = sdscat($$, ";\n");
 	}
 	;
 
@@ -254,129 +258,138 @@ out_list: ID SEMICOLON out_list | ID {
 	;
 
 loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEND {
+		$$ = sdsnew("while( ");
+		$$ = sdscat($$, $5);
+		$$ = sdscat($$, " ) {\n");
+		$$ = sdscat($$, $3);
+		$$ = sdscat($$, "}\n");
 	}
 	;
 
 condition: EITHER logical_exp OR logical_exp {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " OR ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " OR ");
+		$$ = sdscat($$, $3);
 	}
 	| NEITHER logical_exp NOR logical_exp {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " NOR ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " NOR ");
+		$$ = sdscat($$, $3);
 	}
 	| BOTH logical_exp AND logical_exp {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " AND ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " AND ");
+		$$ = sdscat($$, $3);
 	}
 	;
 
 cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEND {
-
+		$$ = sdsnew("execute( ");
+		$$ = sdscat($$, $5);
+		$$ = sdscat($$, " ) {\n");
+		$$ = sdscat($$, $3);
+		$$ = sdscat($$, "}\n");
 	}
 	;
 
 logical_exp: logical_exp OR elem1 {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " OR ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " OR ");
+		$$ = sdscat($$, $3);
 	}
 	| elem1 {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	;
 
 elem1: elem1 AND elem2 {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " AND ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " AND ");
+		$$ = sdscat($$, $3);
 	}
 	| elem2 {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	;
 
 elem2: NOT elem2 {
-		$$ = buffer_new_with_string("NOT ");
-		buffer_append($$, buffer_string($2));
+		$$ = sdsnew("NOT ");
+		$$ = sdscat($$, $2);
 	}
 	| elem3 {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	;
 
 elem3: LEFTPAREN logical_exp RIGHTPAREN {
-		$$ = buffer_new_with_string("( ");
-		buffer_append($$, buffer_string($2));
-		buffer_append($$, " )");
+		$$ = sdsnew("( ");
+		$$ = sdscat($$, $2);
+		$$ = sdscat($$, " )");
 	}
 	| rel_exp {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	;
 
 
 rel_exp: t1 rel_op t1 {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " ");
-		buffer_append($$, buffer_string($2));
-		buffer_append($$, " ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " ");
+		$$ = sdscat($$, $2);
+		$$ = sdscat($$, " ");
+		$$ = sdscat($$, $3);
 	}
 	;
 
 t1: math_exp {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	;
 
 rel_op: LT {
-		$$ = buffer_new_with_string("LT");
+		$$ = sdsnew("<");
 	}
 	| LE {
-		$$ = buffer_new_with_string("LE");
+		$$ = sdsnew("<=");
 	}
 	| GT {
-		$$ = buffer_new_with_string("GT");
+		$$ = sdsnew(">");
 	}
 	| GE {
-		$$ = buffer_new_with_string("GE");
+		$$ = sdsnew(">=");
 	}
 	| NE {
-		$$ = buffer_new_with_string("NE");
+		$$ = sdsnew("!=");
 	}
 	| EQ {
-		$$ = buffer_new_with_string("EQ");
+		$$ = sdsnew("==");
 	}
 	;
 
 math_exp: math_exp ADD term {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " ADD ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " + ");
+		$$ = sdscat($$, $3);
 	}
 	| math_exp SUB term {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " SUB ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " - ");
+		$$ = sdscat($$, $3);
 	}
 	| term {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	;
 
 term: term MUL factor {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " * ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " * ");
+		$$ = sdscat($$, $3);
 	}
 	| term DIVISION factor {
-		$$ = buffer_new_with_string(buffer_string($1));
-		buffer_append($$, " / ");
-		buffer_append($$, buffer_string($3));
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " / ");
+		$$ = sdscat($$, $3);
 	}
 	| factor {
 		$$ = $1;
@@ -384,27 +397,27 @@ term: term MUL factor {
 	;
 
 factor: SUB factor {
-		$$ = buffer_new_with_string("-");
-		buffer_append($$, buffer_string($2));
+		$$ = sdsnew("-");
+		$$ = sdscat($$, $2);
 	}
 	| element {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	;
 
 element: LEFTPAREN math_exp RIGHTPAREN {
-		$$ = buffer_new_with_string("(");
-		buffer_append($$, buffer_string($2));
-		buffer_append($$, ")");
+		$$ = sdsnew("(");
+		$$ = sdscat($$, $2);
+		$$ = sdscat($$, ")");
 	}
 	| ID {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	| NUMBER {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	| STRING {
-		$$ = buffer_new_with_string(buffer_string($1));
+		$$ = sdsnew($1);
 	}
 	;
 
