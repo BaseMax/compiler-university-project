@@ -265,6 +265,7 @@ in_list: ID {
 out_stmt: PUT out_list COMMANDEND {
 		$$ = sdsnew("cout << ");
 		$$ = sdscat($$, $2);
+		$$ = sdscat($$, " << \"\\n\"");
 		$$ = sdscat($$, ";\n");
 	}
 	;
@@ -293,9 +294,9 @@ cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE COMMANDEND {
 		 $$ = sdscat($$, $5);
 		 //$$ = sdscat($$, " ) {\n");
 		 $$ = sdscat($$, "\n");
-		$$ = sdscat($$, "{\n");
+		//$$ = sdscat($$, "{\n");
 		$$ = sdscat($$, $3);
-		$$ = sdscat($$, "}\n");
+		//$$ = sdscat($$, "}\n");
 	}
 	;
 
