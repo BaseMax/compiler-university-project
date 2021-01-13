@@ -1,3 +1,3 @@
-bison -d $2 parser.y -Wcounterexamples
+bison -d $2 parser.y
 flex $1 lexer.l
-g++ -o parser scanner.cpp parser.cpp
+gcc -o parser lex.yy.c parser.c
