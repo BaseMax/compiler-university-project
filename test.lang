@@ -10,6 +10,10 @@ end;
 
 procedure division;
 	get x,y;
+	put x;
+	put y;
+
+	put; /* new line */
 	repeat {
 		execute {
 			put y;
@@ -17,7 +21,7 @@ procedure division;
 			set z to z*2;
 		};
 	}
-	either y lt 0;
+	either y ge 0;
 
 	set y to x-1;
 end;
