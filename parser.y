@@ -86,6 +86,7 @@
 %type <string> id_list
 
 %type <string> stmt_list
+%type <string> stmt_list_or_no
 %type <string> stmt
 
 %type <string> assgn_stmt
@@ -184,10 +185,18 @@ type: INTEGER {
 	}
 	;
 
-exe_part: PROCEDURE DIVISION COMMANDEND stmt_list END COMMANDEND {
+exe_part: PROCEDURE DIVISION COMMANDEND stmt_list_or_no END COMMANDEND {
 		$$ = buffer_new_with_string("#include <stdio.h>\n\nint main()\n{\n");
 		buffer_append($$, buffer_string($4));
 		buffer_append($$, "return 0;\n}\n");
+	}
+	;
+
+stmt_list_or_no: stmt_list {
+		$$ = buffer_new_with_string(buffer_string($1));
+	}
+	| {
+		$$ = buffer_new_with_string("// empty stmts\n");
 	}
 	;
 
@@ -195,9 +204,6 @@ stmt_list: stmt { $$ = $1; }
 	| stmt stmt_list {
 		$$ = buffer_new_with_string(buffer_string($1));
 		buffer_append($$, buffer_string($2));
-	}
-	| {
-		$$ = buffer_new_with_string("// empty stmts\n");
 	}
 	;
 
@@ -209,12 +215,6 @@ stmt: assgn_stmt { $$ = $1; }
 	;
 
 assgn_stmt: SET ID TO math_exp COMMANDEND {
-		$$ = buffer_new_with_string(buffer_string($2));
-		buffer_append($$, " = ");
-		buffer_append($$, buffer_string($4));
-		buffer_append($$, ";\n");
-	}
-	| SET ID TO STRING COMMANDEND {
 		$$ = buffer_new_with_string(buffer_string($2));
 		buffer_append($$, " = ");
 		buffer_append($$, buffer_string($4));
@@ -249,7 +249,7 @@ out_list: ID SEMICOLON out_list | ID {
 	}
 	;
 
-loop_stmt: REPEAT SECTION_OPEN stmt_list SECTION_CLOSE condition COMMANDEND {
+loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEND {
 	}
 	;
 
@@ -258,7 +258,7 @@ condition: EITHER logical_exp OR logical_exp
 	| BOTH logical_exp AND logical_exp
 	;
 
-cond1_stmt: EXECUTE SECTION_OPEN stmt_list SECTION_CLOSE condition COMMANDEND {
+cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEND {
 
 	}
 	;
