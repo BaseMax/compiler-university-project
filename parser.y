@@ -300,20 +300,29 @@ cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE COMMANDEND {
 	;
 
 condition: EITHER expression COMMANDEND {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, $2);
+		$$ = sdsnew($2);
+
+		//$$ = sdsnew($1);
+		//$$ = sdscat($$, $2);
+
 		// $$ = sdscat($$, " OR ");
 		// $$ = sdscat($$, $3);
 	}
 	| NEITHER expression COMMANDEND {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, $2);
+		$$ = sdsnew($2);
+
+		//$$ = sdsnew($1);
+		//$$ = sdscat($$, $2);
+
 		// $$ = sdscat($$, " NOR ");
 		// $$ = sdscat($$, $3);
 	}
 	| BOTH expression COMMANDEND {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, $2);
+		$$ = sdsnew($2);
+
+		//$$ = sdsnew($1);
+		//$$ = sdscat($$, $2);
+
 		// $$ = sdscat($$, " AND ");
 		// $$ = sdscat($$, $3);
 	}
