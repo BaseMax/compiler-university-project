@@ -44,12 +44,12 @@ int line=1;
 <INITIAL>"both"				{ return(BOTH); }
 <INITIAL>"neither"				{ return(NEITHER); }
 
-<INITIAL>"LT"				{ return(LT); }
-<INITIAL>"LE"				{ return(LE); }
-<INITIAL>"GT"				{ return(GT); }
-<INITIAL>"GE"				{ return(GE); }
-<INITIAL>"NE"				{ return(NE); }
-<INITIAL>"EQ"				{ return(EQ); }
+<INITIAL>"lt"				{ return(LT); }
+<INITIAL>"le"				{ return(LE); }
+<INITIAL>"gt"				{ return(GT); }
+<INITIAL>"ge"				{ return(GE); }
+<INITIAL>"ne"				{ return(NE); }
+<INITIAL>"eq"				{ return(EQ); }
 
 <INITIAL>"not"				{ return(NOT); }
 <INITIAL>"nor"				{ return(NOR); }
@@ -78,8 +78,8 @@ int line=1;
 <INITIAL>":"				{ return(COLON); }
 <INITIAL>";"					{ return(COMMANDEND); }
 
-[a-zA-Z][a-zA-Z0-9]*									{ yylval.string = sdsnew(yytext); return(ID); }
 [1-9][0-9]*|\.[0-9]*|[1-9][0-9]\.|[1-9][0-9]*\.[0-9]*	{ yylval.string = sdsnew(yytext); return(NUMBER); }
+[a-zA-Z][a-zA-Z0-9]*									{ yylval.string = sdsnew(yytext); return(ID); }
 \'(\\.|[^\\'\n])*\'										{ yylval.string = sdsnew(yytext); return(STRING); }
 [ \t]				;
 [\n] 	{
