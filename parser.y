@@ -36,7 +36,7 @@
 %token <string> PROCEDURE
 %token <string> DIVISION
 %token <string> GET
-%token <string> SET
+
 %token <string> PUT
 %token <string> TO
 %token <string> EXECUTE
@@ -62,10 +62,14 @@
 %left <string> MUL
 %left <string> DIV
 
+%right <string> SET
+
+%left <string> LEFTPAREN
+%left <string> RIGHTPAREN
+
 %token <string> SECTION_OPEN
 %token <string> SECTION_CLOSE
-%token <string> LEFTPAREN
-%token <string> RIGHTPAREN
+
 %token <string> INTEGER
 %token <string> FLOAT
 %token <string> CHAR
@@ -78,7 +82,6 @@
 %token <string> STRING
 %token <string> UNSIGNED
 
-%type <string> program
 
 %type<string> heading
 %type<string> data_part
@@ -106,27 +109,18 @@
 
 %type <string> loop_stmt
 %type <string> cond1_stmt
-%type <string> logical_exp
-%type <string> elem1
-%type <string> elem2
-%type <string> elem3
-%type <string> rel_exp
-%type <string> t1
-%type <string> rel_op
-%type <string> math_exp
-%type <string> term
-%type <string> factor
-%type <string> element
+
 %type <string> structure
 
 %type <string> condition
+%type <string> expression
 
 
 %start program
 %%
 
 program: structure {
-		//printf("%s", $1);
+		printf("%s", $1);
 	}
 	;
 
@@ -134,6 +128,7 @@ structure: heading data_part exe_part {
 		printf("%s", $1);
 		printf("%s", $2);
 		printf("%s", $3);
+		$$ = sdsnew($1);
 	}
 	| {
 		$$ = sdsnew("// empty program\n");
@@ -205,7 +200,9 @@ stmt_list_or_no: stmt_list {
 	}
 	;
 
-stmt_list: stmt { $$ = $1; }
+stmt_list: stmt {
+		$$ = $1;
+	}
 	| stmt stmt_list {
 		$$ = sdsnew($1);
 		$$ = sdscat($$, $2);
@@ -219,7 +216,7 @@ stmt: assgn_stmt { $$ = $1; }
 	| cond1_stmt { $$ = $1; }
 	;
 
-assgn_stmt: SET ID TO math_exp COMMANDEND {
+assgn_stmt: SET ID TO expression COMMANDEND {
 		$$ = sdsnew($2);
 		$$ = sdscat($$, " = ");
 		$$ = sdscat($$, $4);
@@ -257,7 +254,7 @@ out_list: ID SEMICOLON out_list | ID {
 	}
 	;
 
-loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEND {
+loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition {
 		$$ = sdsnew("while( ");
 		$$ = sdscat($$, $5);
 		$$ = sdscat($$, " ) {\n");
@@ -266,24 +263,7 @@ loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEN
 	}
 	;
 
-condition: EITHER logical_exp OR logical_exp {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, " OR ");
-		$$ = sdscat($$, $3);
-	}
-	| NEITHER logical_exp NOR logical_exp {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, " NOR ");
-		$$ = sdscat($$, $3);
-	}
-	| BOTH logical_exp AND logical_exp {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, " AND ");
-		$$ = sdscat($$, $3);
-	}
-	;
-
-cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEND {
+cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition {
 		$$ = sdsnew("execute( ");
 		$$ = sdscat($$, $5);
 		$$ = sdscat($$, " ) {\n");
@@ -292,132 +272,99 @@ cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMAND
 	}
 	;
 
-logical_exp: logical_exp OR elem1 {
+condition: EITHER expression COMMANDEND {
 		$$ = sdsnew($1);
-		$$ = sdscat($$, " OR ");
-		$$ = sdscat($$, $3);
+		$$ = sdscat($$, $2);
+		//$$ = sdscat($$, " OR ");
+		//$$ = sdscat($$, $3);
 	}
-	| elem1 {
+	| NEITHER expression COMMANDEND {
 		$$ = sdsnew($1);
+		$$ = sdscat($$, $2);
+		//$$ = sdscat($$, " NOR ");
+		//$$ = sdscat($$, $3);
+	}
+	| BOTH expression COMMANDEND {
+		$$ = sdsnew($1);
+		$$ = sdscat($$, $2);
+		//$$ = sdscat($$, " AND ");
+		//$$ = sdscat($$, $3);
 	}
 	;
 
-elem1: elem1 AND elem2 {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, " AND ");
-		$$ = sdscat($$, $3);
-	}
-	| elem2 {
-		$$ = sdsnew($1);
-	}
-	;
-
-elem2: NOT elem2 {
-		$$ = sdsnew("NOT ");
+expression:
+	 SUB expression {
+		$$ = sdsnew("- ");
 		$$ = sdscat($$, $2);
 	}
-	| elem3 {
-		$$ = sdsnew($1);
-	}
-	;
-
-elem3: LEFTPAREN logical_exp RIGHTPAREN {
-		$$ = sdsnew("( ");
+	| NOT expression {
+		$$ = sdsnew("! ");
 		$$ = sdscat($$, $2);
-		$$ = sdscat($$, " )");
 	}
-	| rel_exp {
+	| expression GT expression {
 		$$ = sdsnew($1);
-	}
-	;
-
-
-rel_exp: t1 rel_op t1 {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, " ");
-		$$ = sdscat($$, $2);
-		$$ = sdscat($$, " ");
+		$$ = sdscat($$, " > ");
 		$$ = sdscat($$, $3);
 	}
-	;
-
-t1: math_exp {
+	| expression GE expression {
 		$$ = sdsnew($1);
-	}
-	;
-
-rel_op: LT {
-		$$ = sdsnew("<");
-	}
-	| LE {
-		$$ = sdsnew("<=");
-	}
-	| GT {
-		$$ = sdsnew(">");
-	}
-	| GE {
-		$$ = sdsnew(">=");
-	}
-	| NE {
-		$$ = sdsnew("!=");
-	}
-	| EQ {
-		$$ = sdsnew("==");
-	}
-	;
-
-math_exp: math_exp ADD term {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, " + ");
+		$$ = sdscat($$, " >= ");
 		$$ = sdscat($$, $3);
 	}
-	| math_exp SUB term {
+	| expression LT expression {
 		$$ = sdsnew($1);
-		$$ = sdscat($$, " - ");
+		$$ = sdscat($$, " < ");
 		$$ = sdscat($$, $3);
 	}
-	| term {
+	| expression LE expression {
 		$$ = sdsnew($1);
-	}
-	;
-
-term: term MUL factor {
-		$$ = sdsnew($1);
-		$$ = sdscat($$, " * ");
+		$$ = sdscat($$, " <= ");
 		$$ = sdscat($$, $3);
 	}
-	| term DIVISION factor {
+	| expression AND expression {
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " && ");
+		$$ = sdscat($$, $3);
+	}
+	| expression OR expression {
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " || ");
+		$$ = sdscat($$, $3);
+	}
+	| ID {
+		$$ = $1;
+	}
+	| STRING {
+		$$ = $1;
+	}
+	| NUMBER {
+		$$ = $1;
+	}
+	| expression DIV expression {
+		// if ($3 == 0) { yyerror("Cannot divide by zero"); exit(1); } else {}
 		$$ = sdsnew($1);
 		$$ = sdscat($$, " / ");
 		$$ = sdscat($$, $3);
 	}
-	| factor {
-		$$ = $1;
+	| expression MUL expression {
+		$$ = sdsnew($1);
+		$$ = sdscat($$, " * ");
+		$$ = sdscat($$, $3);
 	}
-	;
-
-factor: SUB factor {
-		$$ = sdsnew("-");
+	| LEFTPAREN expression RIGHTPAREN {
+		$$ = sdsnew("( ");
 		$$ = sdscat($$, $2);
+		$$ = sdscat($$, " )");
 	}
-	| element {
+	| expression ADD expression {
 		$$ = sdsnew($1);
+		$$ = sdscat($$, " + ");
+		$$ = sdscat($$, $3);
 	}
-	;
-
-element: LEFTPAREN math_exp RIGHTPAREN {
-		$$ = sdsnew("(");
-		$$ = sdscat($$, $2);
-		$$ = sdscat($$, ")");
-	}
-	| ID {
+	| expression SUB expression {
 		$$ = sdsnew($1);
-	}
-	| NUMBER {
-		$$ = sdsnew($1);
-	}
-	| STRING {
-		$$ = sdsnew($1);
+		$$ = sdscat($$, " - ");
+		$$ = sdscat($$, $3);
 	}
 	;
 
