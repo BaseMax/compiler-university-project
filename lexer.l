@@ -20,6 +20,11 @@ int line=1;
 
 %%
 
+<INITIAL>"/*"       { BEGIN(COMMENT); }
+<COMMENT>"*/"       { BEGIN(INITIAL); }
+<COMMENT>\n         { line++; }
+<COMMENT>.          { ; }
+
 <INITIAL>"program"				{ return(PROGRAM); }
 
 <INITIAL>"data"				{ return(DATA); }
@@ -49,12 +54,6 @@ int line=1;
 <INITIAL>"nor"				{ return(NOR); }
 <INITIAL>"and"				{ return(AND); }
 <INITIAL>"or"				{ return(OR); }
-
-<INITIAL>"/*"       { BEGIN(COMMENT); }
-<COMMENT>"*/"       { BEGIN(INITIAL); }
-<COMMENT>.*         { ; }
-<COMMENT>\n         { line++; }
-
 
 <INITIAL>"+"				{ return(ADD); }
 <INITIAL>"-"				{ return(SUB); }
