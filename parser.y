@@ -2,6 +2,9 @@
 	#include <stdio.h>
 	#include <string.h>
 	#include <stdlib.h>
+	#include "buffer.h"
+
+	#define YYERROR_VERBOSE 1
 
 	extern FILE *yyin;
 	extern int yylex();
@@ -23,7 +26,8 @@
 
 %union
 {
-	char *string;
+	buffer_t *string;
+	//char *string;
 }
 
 %token <string> PROGRAM
@@ -107,6 +111,7 @@
 %type <string> term
 %type <string> factor
 %type <string> element
+%type <string> structure
 
 %left MUL DIV
 %left ADD SUB
@@ -115,51 +120,85 @@
 %%
 
 program: structure {
+		printf("%s", $1);
 	}
 	;
 
 structure: heading data_part exe_part {
-		printf("%s", $1);
-		printf("%s", $2);
-		printf("%s", $3);
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, buffer_string($2));
+		buffer_append($$, buffer_string($3));
+	}
+	| {
+		$$ = buffer_new_with_string("// empty program\n");
 	}
 	;
 
 heading: PROGRAM ID COLON {
-		printf("// Program %s\n", $2);
+		$$ = buffer_new_with_string("// Program ");
+		buffer_append($$, buffer_string($2));
+		buffer_append($$, "\n");
 	}
 	;
 
 data_part: DATA DIVISION COMMANDEND data_body END COMMANDEND {
-		$$ = $4;
+		$$ = buffer_new_with_string(buffer_string($4));
 	}
 	;
 
-data_body: data_stmt { $$ = $1; }
-	| data_stmt data_body { sprintf($$, "%s%s", $1, $2); }
+data_body: data_stmt {
+		$$ = buffer_new_with_string(buffer_string($1));
+	}
+	| data_stmt data_body {
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, buffer_string($2));
+	}
 	;
 
 data_stmt: id_list COLON type COMMANDEND {
-		sprintf($$, "%s %s;\n", $3, $1);
+		$$ = buffer_new_with_string(buffer_string($3));
+		buffer_append($$, " ");
+		buffer_append($$, buffer_string($1));
+		buffer_append($$, ";\n");
 	}
 	;
 
-id_list: ID { $$ = $1; }
-	| ID SEMICOLON id_list { sprintf($$, "%s,%s", $1, $2); }
+id_list: ID {
+		$$ = buffer_new_with_string(buffer_string($1));
+	}
+	| ID SEMICOLON id_list {
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, ",");
+		buffer_append($$, buffer_string($2));
+	}
 	;
 
-type: INTEGER
-	| FLOAT
-	| CHAR
+type: INTEGER {
+		$$ = buffer_new_with_string("int");
+	}
+	| FLOAT {
+		$$ = buffer_new_with_string("float");
+	}
+	| CHAR {
+		$$ = buffer_new_with_string("char");
+	}
 	;
 
 exe_part: PROCEDURE DIVISION COMMANDEND stmt_list END COMMANDEND {
-		sprintf($$, "%s%s%s", "#include <stdio.h>\n\nint main()\n{\n", $4, "return 0;\n}\n");
+		$$ = buffer_new_with_string("#include <stdio.h>\n\nint main()\n{\n");
+		buffer_append($$, buffer_string($4));
+		buffer_append($$, "return 0;\n}\n");
 	}
 	;
 
 stmt_list: stmt { $$ = $1; }
-	| stmt stmt_list { sprintf($$, "%s%s", $1, $2); }
+	| stmt stmt_list {
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, buffer_string($2));
+	}
+	| {
+		$$ = buffer_new_with_string("// empty stmts\n");
+	}
 	;
 
 stmt: assgn_stmt { $$ = $1; }
@@ -170,11 +209,16 @@ stmt: assgn_stmt { $$ = $1; }
 	;
 
 assgn_stmt: SET ID TO math_exp COMMANDEND {
-		sprintf($$, "%s = %s;\n", $2, $4);
+		$$ = buffer_new_with_string(buffer_string($2));
+		buffer_append($$, " = ");
+		buffer_append($$, buffer_string($4));
+		buffer_append($$, ";\n");
 	}
 	| SET ID TO STRING COMMANDEND {
-		strcpy(buffer, $4);
-		sprintf($$, "%s = \"%s\";\n", $2, buffer);
+		$$ = buffer_new_with_string(buffer_string($2));
+		buffer_append($$, " = ");
+		buffer_append($$, buffer_string($4));
+		buffer_append($$, ";\n");
 	}
 	;
 
@@ -193,7 +237,7 @@ in_list: ID {
 		$$ = $1;
 	}
 	| ID SEMICOLON in_list {
-		sprintf($$, "%s%s", $1, $2);
+		// sprintf($$, "%s%s", $1, $2);
 	}
 	;
 
@@ -220,87 +264,103 @@ cond1_stmt: EXECUTE SECTION_OPEN stmt_list SECTION_CLOSE condition COMMANDEND {
 	;
 
 logical_exp: logical_exp OR elem1 {
-
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " OR ");
+		buffer_append($$, buffer_string($3));
 	}
 	| elem1 {
-
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	;
 
 elem1: elem1 AND elem2 {
-
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " AND ");
+		buffer_append($$, buffer_string($3));
 	}
 	| elem2 {
-
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	;
 
 elem2: NOT elem2 {
-
+		$$ = buffer_new_with_string("NOT ");
+		buffer_append($$, buffer_string($2));
 	}
 	| elem3 {
-
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	;
 
 elem3: LEFTPAREN logical_exp RIGHTPAREN {
-
+		$$ = buffer_new_with_string("( ");
+		buffer_append($$, buffer_string($2));
+		buffer_append($$, " )");
 	}
 	| rel_exp {
-
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	;
 
 
 rel_exp: t1 rel_op t1 {
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " ");
+		buffer_append($$, buffer_string($2));
+		buffer_append($$, " ");
+		buffer_append($$, buffer_string($3));
 	}
 	;
 
 t1: math_exp {
-		$$ = $1;
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	;
 
 rel_op: LT {
-		$$ = $1;
+		$$ = buffer_new_with_string("LT");
 	}
 	| LE {
-		$$ = $1;
+		$$ = buffer_new_with_string("LE");
 	}
 	| GT {
-		$$ = $1;
+		$$ = buffer_new_with_string("GT");
 	}
 	| GE {
-		$$ = $1;
+		$$ = buffer_new_with_string("GE");
 	}
 	| NE {
-		$$ = $1;
+		$$ = buffer_new_with_string("NE");
 	}
 	| EQ {
-		$$ = $1;
+		$$ = buffer_new_with_string("EQ");
 	}
 	;
 
 math_exp: math_exp ADD term {
-
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " ADD ");
+		buffer_append($$, buffer_string($3));
 	}
 	| math_exp SUB term {
-
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " SUB ");
+		buffer_append($$, buffer_string($3));
 	}
 	| term {
-
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	;
 
 term: term MUL factor {
-		fprintf($$, "%s * %s", $1, $3);
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " * ");
+		buffer_append($$, buffer_string($3));
 	}
 	| term DIVISION factor {
-		strcpy(buffer, $1);
-		strcat(buffer, " / ");
-		strcat(buffer, $3);
-		//fprintf($$, "%s / %s", $1, $3);
-		fprintf($$, "%s", buffer);
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " / ");
+		buffer_append($$, buffer_string($3));
 	}
 	| factor {
 		$$ = $1;
@@ -308,25 +368,27 @@ term: term MUL factor {
 	;
 
 factor: SUB factor {
-		fprintf($$, "-%s", $2);
+		$$ = buffer_new_with_string("-");
+		buffer_append($$, buffer_string($2));
 	}
 	| element {
-		$$ = $1;
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	;
 
 element: LEFTPAREN math_exp RIGHTPAREN {
-		sprintf($$, "(%s)", $2);
+		$$ = buffer_new_with_string("(");
+		buffer_append($$, buffer_string($2));
+		buffer_append($$, ")");
 	}
 	| ID {
-		$$ = $1;
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	| NUMBER {
-		$$ = $1;
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	| STRING {
-		strcpy(buffer, $1);
-		$$ = buffer;
+		$$ = buffer_new_with_string(buffer_string($1));
 	}
 	;
 
@@ -339,7 +401,7 @@ int yywrap()
 
 void yyerror(char const* msg)
 {
-	fprintf(stderr, "[%d]:%s\n", line, msg);
+	// fprintf(stderr, "[%d]:%s\n", line, msg);
 }
 
 int main(int argc, char *argv[])
