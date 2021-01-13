@@ -268,12 +268,17 @@ out_stmt: PUT out_list COMMANDEND {
 		$$ = sdscat($$, " << \"\\n\"");
 		$$ = sdscat($$, ";\n");
 	}
+	| PUT COMMANDEND {
+		$$ = sdsnew("cout << ");
+		$$ = sdscat($$, " \"\\n\"");
+		$$ = sdscat($$, ";\n");
+	}
 	;
 
 out_list: ID SEMICOLON out_list {
 		$$ = sdsnew($1);
 		$$ = sdscat($$, " << ");
-		$$ = sdscat($$, $2);
+		$$ = sdscat($$, $3);
 	}
 	| ID {
 		$$ = sdsnew($1);
