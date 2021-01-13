@@ -266,6 +266,7 @@ in_list: ID {
 out_stmt: PUT out_list COMMANDEND {
 		$$ = sdsnew("cout << ");
 		$$ = sdscat($$, $2);
+		$$ = sdscat($$, ";\n");
 	}
 	;
 
