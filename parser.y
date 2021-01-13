@@ -9,7 +9,17 @@
 	extern int line;
 	#define BUFER_SIZE 1024
 	char buffer[BUFER_SIZE];
+
+	typedef struct str {
+		char * val;
+		size_t cap;
+		size_t len;
+	} str;
+
 %}
+
+%output "parser.c"
+%defines "parser.h"
 
 %union
 {
@@ -179,7 +189,11 @@ in_stmt: GET in_list COMMANDEND {
 	}
 	;
 
-in_list: ID SEMICOLON in_list | ID {
+in_list: ID {
+		$$ = $1;
+	}
+	| ID SEMICOLON in_list {
+		sprintf($$, "%s%s", $1, $2);
 	}
 	;
 
@@ -282,7 +296,11 @@ term: term MUL factor {
 		fprintf($$, "%s * %s", $1, $3);
 	}
 	| term DIVISION factor {
-		fprintf($$, "%s / %s", $1, $3);
+		strcpy(buffer, $1);
+		strcat(buffer, " / ");
+		strcat(buffer, $3);
+		//fprintf($$, "%s / %s", $1, $3);
+		fprintf($$, "%s", buffer);
 	}
 	| factor {
 		$$ = $1;
