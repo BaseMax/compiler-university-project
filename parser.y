@@ -118,6 +118,8 @@
 %type <string> element
 %type <string> structure
 
+%type <string> condition
+
 
 %start program
 %%
@@ -255,9 +257,21 @@ loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEN
 	}
 	;
 
-condition: EITHER logical_exp OR logical_exp
-	| NEITHER logical_exp NOR logical_exp
-	| BOTH logical_exp AND logical_exp
+condition: EITHER logical_exp OR logical_exp {
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " OR ");
+		buffer_append($$, buffer_string($3));
+	}
+	| NEITHER logical_exp NOR logical_exp {
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " NOR ");
+		buffer_append($$, buffer_string($3));
+	}
+	| BOTH logical_exp AND logical_exp {
+		$$ = buffer_new_with_string(buffer_string($1));
+		buffer_append($$, " AND ");
+		buffer_append($$, buffer_string($3));
+	}
 	;
 
 cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition COMMANDEND {
