@@ -2,12 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "parser.tab.h"
+
+//#ifndef YYSTYPE
+//	#define YYSTYPE char*
+//#endif
+
+#include "parser.h"
 
 extern int yyparse();
 int line=1;
 
+
 %}
+
+%option yylineno
+%x COMMENT
 
 %%
 
@@ -41,10 +50,14 @@ int line=1;
 <INITIAL>"and"				{ return(AND); }
 <INITIAL>"or"				{ return(OR); }
 
-<INITIAL>"/*"[^*]*[*]+([^*/][^*]*[*]+)*[/] { ; }
+<INITIAL>"/*"       { BEGIN(COMMENT); }
+<COMMENT>"*/"       { BEGIN(INITIAL); }
+<COMMENT>.*         { ; }
+<COMMENT>\n         { line++; }
+
 
 <INITIAL>"+"				{ return(ADD); }
-<INITIAL>"-"				{ return(MIN); }
+<INITIAL>"-"				{ return(SUB); }
 <INITIAL>"*"				{ return(MUL); }
 <INITIAL>"/"				{ return(DIV); }
 
