@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "buffer.h"
 
 //#ifndef YYSTYPE
 //	#define YYSTYPE char*
@@ -77,9 +78,9 @@ int line=1;
 <INITIAL>":"				{ return(COLON); }
 <INITIAL>";"					{ return(COMMANDEND); }
 
-[a-zA-Z][a-zA-Z0-9]*									{ yylval.string = strdup(yytext); return(ID); }
-[1-9][0-9]*|\.[0-9]*|[1-9][0-9]\.|[1-9][0-9]*\.[0-9]*	{ yylval.string = strdup(yytext); return(NUMBER); }
-\'(\\.|[^\\'\n])*\'										{ yylval.string = strdup(yytext); return(STRING); }
+[a-zA-Z][a-zA-Z0-9]*									{ yylval.string = buffer_new_with_string(yytext); return(ID); }
+[1-9][0-9]*|\.[0-9]*|[1-9][0-9]\.|[1-9][0-9]*\.[0-9]*	{ yylval.string = buffer_new_with_string(yytext); return(NUMBER); }
+\'(\\.|[^\\'\n])*\'										{ yylval.string = buffer_new_with_string(yytext); return(STRING); }
 [ \t]				;
 [\n] 	{
 	line++;
