@@ -11,6 +11,11 @@ end;
 procedure division;
 	get x,y;
 	repeat {
+		execute {
+			put y;
+			set y to y-1;
+			set z to z*2;
+		};
 	}
 	either y lt 0;
 
