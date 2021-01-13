@@ -78,7 +78,7 @@ int line=1;
 <INITIAL>":"				{ return(COLON); }
 <INITIAL>";"					{ return(COMMANDEND); }
 
-[1-9][0-9]*|\.[0-9]*|[1-9][0-9]\.|[1-9][0-9]*\.[0-9]*	{ yylval.string = sdsnew(yytext); return(NUMBER); }
+[0-9]*|[0-9]*\.[0-9]*	{ yylval.string = sdsnew(yytext); return(NUMBER); }
 [a-zA-Z][a-zA-Z0-9]*									{ yylval.string = sdsnew(yytext); return(ID); }
 \'(\\.|[^\\'\n])*\'										{ yylval.string = sdsnew(yytext); return(STRING); }
 [ \t]				;
