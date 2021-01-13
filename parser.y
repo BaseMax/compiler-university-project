@@ -43,20 +43,24 @@
 %token <string> EITHER
 %token <string> BOTH
 %token <string> NEITHER
-%token <string> LT
-%token <string> LE
-%token <string> GT
-%token <string> GE
-%token <string> NE
-%token <string> EQ
-%token <string> NOT
-%token <string> AND
-%token <string> OR
-%token <string> NOR
-%token <string> ADD
-%token <string> SUB
-%token <string> MUL
-%token <string> DIV
+
+%left <string> LT
+%left <string> LE
+%left <string> GT
+%left <string> GE
+%left <string> NE
+%left <string> EQ
+
+%right <string> NOT
+
+%left <string> AND
+%left <string> OR
+%left <string> NOR
+%left <string> ADD
+%left <string> SUB
+%left <string> MUL
+%left <string> DIV
+
 %token <string> SECTION_OPEN
 %token <string> SECTION_CLOSE
 %token <string> LEFTPAREN
@@ -114,8 +118,6 @@
 %type <string> element
 %type <string> structure
 
-%left MUL DIV
-%left ADD SUB
 
 %start program
 %%
