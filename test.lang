@@ -10,5 +10,9 @@ end;
 
 procedure division;
 	get x,y;
+	repeat {
+	}
+	either y lt 0;
+
 	set y to x-1;
 end;
