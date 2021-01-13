@@ -1,0 +1,14 @@
+/*
+ * Hello, World
+ */
+program example:
+
+data division;
+	x, y:integer;
+	z:float;
+end;
+
+procedure division;
+	get x,y;
+	set y to x-1;
+end;
