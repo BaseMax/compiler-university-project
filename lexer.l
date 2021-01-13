@@ -4,6 +4,8 @@
 #include <string.h>
 #include "sds.h"
 
+extern void yyerror(char const* msg);
+
 //#ifndef YYSTYPE
 //	#define YYSTYPE char*
 //#endif
@@ -79,7 +81,13 @@ int line=1;
 <INITIAL>";"					{ return(COMMANDEND); }
 
 [0-9]*|[0-9]*\.[0-9]*	{ yylval.string = sdsnew(yytext); return(NUMBER); }
-[a-zA-Z][a-zA-Z0-9]*									{ yylval.string = sdsnew(yytext); return(ID); }
+[a-zA-Z][a-zA-Z0-9]* {
+	if(strlen(yytext) > 20) {
+		yyerror("not good to use a long ident!\n");
+	}
+	yylval.string = sdsnew(yytext);
+	return(ID);
+}
 \'(\\.|[^\\'\n])*\'										{ yylval.string = sdsnew(yytext); return(STRING); }
 [ \t]				;
 [\n] 	{
