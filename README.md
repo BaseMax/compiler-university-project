@@ -10,6 +10,8 @@ It's just a fun project to test myself to see how much time I need to implement 
 /* */ \n program data procedure division get set put to execute repeat either both neither lt le gt ge ne eq not nor and or + - * / { } ( ) integer float char unsigned end , : ; 
 ```
 
+You can find syntax example of this language at [test.lang](test.lang) file.
+
 ## Tech Stack
 
 Lexer and parser build using **Flex** and **Bison**, other parts are pure **C language**.
