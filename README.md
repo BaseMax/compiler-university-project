@@ -22,4 +22,32 @@ Lexer and parser build using **Flex** and **Bison**, other parts are pure **C la
 
 For the dynamic strings I use a library called **sds**, it's a cool and tiny library for C.
 
+## Grammer and compiler syntax
+
+```yacc
+%start program
+
+program: structure
+structure: heading data_part exe_part |
+heading: PROGRAM ID COLON |
+data_part: DATA DIVISION COMMANDEND data_body END COMMANDEND
+data_body: data_stmt | data_stmt data_body
+data_stmt: id_list COLON type COMMANDEND
+id_list: ID | ID SEMICOLON id_list
+type: INTEGER | FLOAT | CHAR {
+exe_part: PROCEDURE DIVISION COMMANDEND stmt_list_or_no END COMMANDEND
+stmt_list_or_no: stmt_list | 
+stmt_list: stmt | stmt stmt_list
+stmt: assgn_stmt | in_stmt | out_stmt | loop_stmt | cond1_stmt
+assgn_stmt: SET ID TO expression COMMANDEND
+in_stmt: GET in_list COMMANDEND
+in_list: ID | ID SEMICOLON in_list
+out_stmt: PUT out_list COMMANDEND | PUT COMMANDEND
+out_list: ID SEMICOLON out_list | ID
+loop_stmt: REPEAT SECTION_OPEN stmt_list_or_no SECTION_CLOSE condition
+cond1_stmt: EXECUTE SECTION_OPEN stmt_list_or_no SECTION_CLOSE COMMANDEND
+condition: EITHER expression COMMANDEND | NEITHER expression COMMANDEND | BOTH expression COMMANDEND
+expression: SUB expression | NOT expression | expression GT expression | expression GE expression | expression LT expression | expression LE expression | expression AND expression | expression OR expression | ID | STRING | NUMBER | expression DIV expression | expression MUL expression | LEFTPAREN expression RIGHTPAREN | expression ADD expression | expression SUB expression
+```
+
 © Copyright Max Base
